@@ -1,0 +1,64 @@
+name: "tagged-release"
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    name: "Build & Unit Tests"
+    strategy:
+      matrix:
+        go-version: [1.19.x]
+        platform: [ubuntu-latest, macos-latest, windows-latest]
+      fail-fast: true
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Install Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go-version }}
+          stable: false
+      - name: Build
+        run: go build ./...
+      - name: Test
+        run: go test -race -failfast ./...
+  fuzz-test:
+    name: Fuzz test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: de-vri-es/setup-git-credentials@v2
+        with:
+          credentials: ${{secrets.GIT_CREDENTIALS}}
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Install Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ vars.GO_VERSION }}
+      - name: Fuzz All The Things
+        run: |
+          curl -o- https://raw.githubusercontent.com/devnw/workflows/main/fuzz.sh | bash
+          exit 0 # Fuzzing is not a test, so we don't want to fail the build
+      - name: Upload Fuzz Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: fuzz-results
+          path: testdata/fuzz
+  release:
+    needs: [build]
+    name: "Tagged Release"
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Create Github Release from Tag
+        uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: false
+          files: |
+            LICENSE
