@@ -6,11 +6,11 @@ import (
 	"strings"
 
 	"github.com/go-json-experiment/json"
-	"github.com/trivago/tgo/tcontainer"
 	"go.devnw.com/structs"
 )
 
-type MMap tcontainer.MarshalMap
+// MMap is a type alias for map[string]any.
+type MMap map[string]any
 
 // MarshalJSON marshals the given struct to json and then merges
 // the unknown fields into the json from the MMap object
@@ -156,17 +156,17 @@ func recurseMap(m map[string]any, path []string, value any) {
 //		return nil
 //	}
 func Unmarshal[T comparable](data []byte) (T, MMap, error) {
-	mm := tcontainer.NewMarshalMap()
+	mm := MMap{}
 
 	var t T
 	err := json.Unmarshal(data, &t)
 	if err != nil {
-		return t, MMap(mm), err
+		return t, mm, err
 	}
 
 	err = json.Unmarshal(data, &mm)
 	if err != nil {
-		return t, MMap(mm), err
+		return t, mm, err
 	}
 
 	tpe := reflect.TypeOf(t)
@@ -185,11 +185,8 @@ func Unmarshal[T comparable](data []byte) (T, MMap, error) {
 		}
 
 		// the first one is the json tag
-		key := options[0]
-		if _, okay := mm.Value(key); okay {
-			delete(mm, key)
-		}
+		delete(mm, options[0])
 	}
 
-	return t, MMap(mm), nil
+	return t, mm, nil
 }
