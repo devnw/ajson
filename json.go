@@ -12,7 +12,7 @@ import (
 
 type MMap tcontainer.MarshalMap
 
-func MarshalJSON[T comparable](t T, mm MMap) ([]byte, error) {
+func Marshal[T comparable](t T, mm MMap) ([]byte, error) {
 	s := structs.New(t)
 	s.TagName = "json"
 
@@ -45,7 +45,7 @@ func recurseMap(m map[string]any, path []string, value any) {
 	}
 }
 
-func UnmarshalJSON[T comparable](data []byte) (T, MMap, error) {
+func Unmarshal[T comparable](data []byte) (T, MMap, error) {
 	mm := tcontainer.NewMarshalMap()
 
 	var t T

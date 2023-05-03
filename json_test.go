@@ -96,7 +96,7 @@ func TestMarshalJSON(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			data, err := MarshalJSON(test.sample, test.unknowns)
+			data, err := Marshal(test.sample, test.unknowns)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -153,7 +153,7 @@ func TestUnmarshalJSON(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			sample, unknowns, err := UnmarshalJSON[Sample]([]byte(test.data))
+			sample, unknowns, err := Unmarshal[Sample]([]byte(test.data))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -178,7 +178,7 @@ func BenchmarkMarshalJSON(b *testing.B) {
 	}
 
 	for i := 0; i < b.N; i++ {
-		_, err := MarshalJSON(sample, MMap{
+		_, err := Marshal(sample, MMap{
 			"location": "USA",
 			"email":    "test@email.com",
 		})
@@ -192,7 +192,7 @@ func BenchmarkUnmarshalJSON(b *testing.B) {
 	data := []byte(`{"name":"John","age":30,"sub":{"name":"Doe"},"location":"USA"}`)
 
 	for i := 0; i < b.N; i++ {
-		_, _, err := UnmarshalJSON[Sample](data)
+		_, _, err := Unmarshal[Sample](data)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -211,12 +211,12 @@ func FuzzMarshalJSON(f *testing.F) {
 			"email":    stripCtlFromUTF8(email),
 		}
 
-		data, err := MarshalJSON(s, unknowns)
+		data, err := Marshal(s, unknowns)
 		if err != nil {
 			t.Fatalf("failed to marshal: %v", err)
 		}
 
-		decodedSample, decodedUnknowns, err := UnmarshalJSON[Sample](data)
+		decodedSample, decodedUnknowns, err := Unmarshal[Sample](data)
 		if err != nil {
 			t.Fatalf("failed to unmarshal: %v", err)
 		}
