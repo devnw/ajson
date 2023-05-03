@@ -12,6 +12,41 @@ import (
 
 type MMap tcontainer.MarshalMap
 
+// MarshalJSON marshals the given struct to json and then merges
+// the unknown fields into the json from the MMap object
+//
+// Example usage:
+//
+//	type Sample struct {
+//		Name string     `json:"name"`
+//		Age  int        `json:"age"`
+//		Sub  *SubSample `json:"sub,omitempty"`
+//	}
+//
+//	type SubSample struct {
+//		Name string `json:"name"`
+//	}
+//
+//	func main() {
+//		sample := Sample{
+//			Name: "John",
+//			Age:  30,
+//		}
+//
+//		unknowns := MMap{
+//			"location": "USA",
+//		}
+//
+//		data, err := MarshalJSON(sample, unknowns)
+//		if err != nil {
+//			panic(err)
+//		}
+//
+//		fmt.Println(string(data))
+//	}
+//
+//	// Output:
+//	// {"name":"John","age":30,"location":"USA"}
 func Marshal[T comparable](t T, mm MMap) ([]byte, error) {
 	s := structs.New(t)
 	s.TagName = "json"
@@ -45,6 +80,8 @@ func recurseMap(m map[string]any, path []string, value any) {
 	}
 }
 
+// UnmarshalJSON unmarshals the given json into the given struct
+// and then returns the unknown fields as a MMap object.
 func Unmarshal[T comparable](data []byte) (T, MMap, error) {
 	mm := tcontainer.NewMarshalMap()
 
