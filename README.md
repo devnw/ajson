@@ -88,9 +88,10 @@ Example with embeded unknown and custom marshaler:
 #### type MMap
 
 ```go
-type MMap tcontainer.MarshalMap
+type MMap map[string]any
 ```
 
+MMap is a type alias for map[string]any.
 
 #### func  Unmarshal
 
