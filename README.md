@@ -26,10 +26,10 @@ go get -u go.devnw.com/ajson
 
 ## Usage
 
-#### func  MarshalJSON
+#### func  Marshal
 
 ```go
-func MarshalJSON[T comparable](t T, mm MMap) ([]byte, error)
+func Marshal[T comparable](t T, mm MMap) ([]byte, error)
 ```
 
 #### type MMap
@@ -39,8 +39,8 @@ type MMap tcontainer.MarshalMap
 ```
 
 
-#### func  UnmarshalJSON
+#### func  Unmarshal
 
 ```go
-func UnmarshalJSON[T comparable](data []byte) (T, MMap, error)
+func Unmarshal[T comparable](data []byte) (T, MMap, error)
 ```
