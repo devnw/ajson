@@ -100,6 +100,61 @@ func recurseMap(m map[string]any, path []string, value any) {
 
 // UnmarshalJSON unmarshals the given json into the given struct
 // and then returns the unknown fields as a MMap object.
+//
+// Example usage:
+//
+//	type Sample struct {
+//		Name string     `json:"name"`
+//		Age  int        `json:"age"`
+//		Sub  *SubSample `json:"sub,omitempty"`
+//	}
+//
+//	type SubSample struct {
+//		Name string `json:"name"`
+//	}
+//
+//	func main() {
+//		data := []byte(`{"name":"John","age":30,"location":"USA"}`)
+//
+//		var sample Sample
+//		unknowns, err := UnmarshalJSON(data, &sample)
+//		if err != nil {
+//			panic(err)
+//		}
+//
+//		fmt.Println(sample)
+//		fmt.Println(unknowns)
+//	}
+//
+//	// Output:
+//	// {John 30 &{ }}
+//	// map[location:USA]
+//
+// Example with embeded unknown and custom unmarshaler:
+//
+//	type Sample struct {
+//		Name 		string
+//		Age  		int
+//		Unknowns	MMap
+//	}
+//
+//	func (s *Sample) UnmarshalJSON(data []byte) error {
+//		var t struct {
+//			ID   string `json:"id"`
+//			Name string `json:"name"`
+//		}
+//
+//		unknowns, err := UnmarshalJSON(data, &t)
+//		if err != nil {
+//			return err
+//		}
+//
+//		s.Name = t.Name
+//		s.Age = t.Age
+//		s.Unknowns = unknowns
+//
+//		return nil
+//	}
 func Unmarshal[T comparable](data []byte) (T, MMap, error) {
 	mm := tcontainer.NewMarshalMap()
 
