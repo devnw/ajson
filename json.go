@@ -180,7 +180,7 @@ func Unmarshal[T comparable](data []byte) (T, MMap, error) {
 		options := strings.Split(tagDetail, ",")
 
 		if len(options) == 0 {
-			return t, MMap(mm),
+			return t, mm,
 				fmt.Errorf("no tags options found for %s", field.Name)
 		}
 
