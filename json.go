@@ -18,10 +18,31 @@ func MarshalJSON[T comparable](t T, mm MMap) ([]byte, error) {
 
 	m := s.Map()
 	for key, value := range mm {
-		m[key] = value
+		recurseMap(m, strings.Split(key, "."), value)
 	}
 
 	return json.Marshal(m)
+}
+
+func recurseMap(m map[string]any, path []string, value any) {
+	if len(path) == 1 {
+		m[path[0]] = value
+		return
+	}
+
+	// if there are more than one path, we need to find the
+	// correct map to set the value
+	// e.g. "sub.name" -> m["sub"].(map[string]any)["name"]
+	for key, v := range m {
+		if key == path[0] {
+			subMap, ok := v.(map[string]any)
+			if !ok {
+				continue
+			}
+
+			recurseMap(subMap, path[1:], value)
+		}
+	}
 }
 
 func UnmarshalJSON[T comparable](data []byte) (T, MMap, error) {
