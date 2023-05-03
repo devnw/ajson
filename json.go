@@ -47,6 +47,24 @@ type MMap tcontainer.MarshalMap
 //
 //	// Output:
 //	// {"name":"John","age":30,"location":"USA"}
+//
+// Example with embeded unknown and custom marshaler:
+//
+//	type Sample struct {
+//		Name 		string
+//		Age  		int
+//		Unknowns	MMap
+//	}
+//
+//	func (s Sample) MarshalJSON() ([]byte, error) {
+//		return MarshalJSON(struct {
+//			ID   string `json:"id"`
+//			Name string `json:"name"`
+//		}{
+//			ID:   t.ID,
+//			Name: t.Name,
+//		}, t.Unknowns)
+//	}
 func Marshal[T comparable](t T, mm MMap) ([]byte, error) {
 	s := structs.New(t)
 	s.TagName = "json"
