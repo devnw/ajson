@@ -31,6 +31,41 @@ go get -u go.devnw.com/ajson
 ```go
 func Marshal[T comparable](t T, mm MMap) ([]byte, error)
 ```
+MarshalJSON marshals the given struct to json and then merges the unknown fields
+into the json from the MMap object
+
+Example usage:
+
+    type Sample struct {
+    	Name string     `json:"name"`
+    	Age  int        `json:"age"`
+    	Sub  *SubSample `json:"sub,omitempty"`
+    }
+
+    type SubSample struct {
+    	Name string `json:"name"`
+    }
+
+    func main() {
+    	sample := Sample{
+    		Name: "John",
+    		Age:  30,
+    	}
+
+    	unknowns := MMap{
+    		"location": "USA",
+    	}
+
+    	data, err := MarshalJSON(sample, unknowns)
+    	if err != nil {
+    		panic(err)
+    	}
+
+    	fmt.Println(string(data))
+    }
+
+    // Output:
+    // {"name":"John","age":30,"location":"USA"}
 
 #### type MMap
 
@@ -44,3 +79,5 @@ type MMap tcontainer.MarshalMap
 ```go
 func Unmarshal[T comparable](data []byte) (T, MMap, error)
 ```
+UnmarshalJSON unmarshals the given json into the given struct and then returns
+the unknown fields as a MMap object.
