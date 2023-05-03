@@ -67,6 +67,24 @@ Example usage:
     // Output:
     // {"name":"John","age":30,"location":"USA"}
 
+Example with embeded unknown and custom marshaler:
+
+    type Sample struct {
+    	Name 		string
+    	Age  		int
+    	Unknowns	MMap
+    }
+
+    func (s Sample) MarshalJSON() ([]byte, error) {
+    	return MarshalJSON(struct {
+    		ID   string `json:"id"`
+    		Name string `json:"name"`
+    	}{
+    		ID:   t.ID,
+    		Name: t.Name,
+    	}, t.Unknowns)
+    }
+
 #### type MMap
 
 ```go
