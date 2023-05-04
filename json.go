@@ -86,6 +86,7 @@ func recurseMap(m map[string]any, path []string, value any) {
 	// if there are more than one path, we need to find the
 	// correct map to set the value
 	// e.g. "sub.name" -> m["sub"].(map[string]any)["name"]
+	found := false
 	for key, v := range m {
 		if key == path[0] {
 			subMap, ok := v.(map[string]any)
@@ -94,7 +95,14 @@ func recurseMap(m map[string]any, path []string, value any) {
 			}
 
 			recurseMap(subMap, path[1:], value)
+			found = true
 		}
+	}
+
+	if !found {
+		newSubMap := make(map[string]any)
+		recurseMap(newSubMap, path[1:], value)
+		m[path[0]] = newSubMap
 	}
 }
 

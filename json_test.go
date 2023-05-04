@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/go-json-experiment/json"
 	"github.com/google/go-cmp/cmp"
 )
@@ -115,6 +116,14 @@ func TestMarshalJSON(t *testing.T) {
 			},
 			expected: `{"name":"John","age":30,"location":{"city":"New York","country":"USA"}}`,
 		},
+		"nil MMap": {
+			sample: Sample{
+				Name: "John",
+				Age:  30,
+			},
+			unknowns: nil,
+			expected: `{"name":"John","age":30}`,
+		},
 	}
 
 	for name, test := range tests {
@@ -134,6 +143,149 @@ func TestMarshalJSON(t *testing.T) {
 			}
 
 			t.Logf("data: %s", data)
+		})
+	}
+}
+
+func Test_recurseMap(t *testing.T) {
+	tests := map[string]struct {
+		m        map[string]any
+		path     []string
+		value    any
+		expected map[string]any
+	}{
+		"simple": {
+			m: map[string]any{
+				"name": "John",
+				"age":  30,
+			},
+			path:  []string{"location"},
+			value: "USA",
+			expected: map[string]any{
+				"name":     "John",
+				"age":      30,
+				"location": "USA",
+			},
+		},
+		"nested": {
+			m: map[string]any{
+				"name": "John",
+				"age":  30,
+			},
+			path:  []string{"location", "country"},
+			value: "USA",
+			expected: map[string]any{
+				"name": "John",
+				"age":  30,
+				"location": map[string]any{
+					"country": "USA",
+				},
+			},
+		},
+		"nested with existing": {
+			m: map[string]any{
+				"name": "John",
+				"age":  30,
+				"location": map[string]any{
+					"city": "New York",
+				},
+			},
+			path:  []string{"location", "country"},
+			value: "USA",
+			expected: map[string]any{
+				"name": "John",
+				"age":  30,
+				"location": map[string]any{
+					"city":    "New York",
+					"country": "USA",
+				},
+			},
+		},
+		"nested with existing and array": {
+			m: map[string]any{
+				"name": "John",
+				"age":  30,
+				"location": map[string]any{
+					"city": "New York",
+				},
+			},
+			path:  []string{"location", "country"},
+			value: []string{"USA", "UK"},
+			expected: map[string]any{
+				"name": "John",
+				"age":  30,
+				"location": map[string]any{
+					"city":    "New York",
+					"country": []string{"USA", "UK"},
+				},
+			},
+		},
+		"nested with existing and map": {
+			m: map[string]any{
+				"name": "John",
+				"age":  30,
+				"location": map[string]any{
+					"city": "New York",
+				},
+			},
+			path: []string{"location", "country"},
+			value: map[string]string{
+				"country": "USA",
+				"city":    "New York",
+			},
+			expected: map[string]any{
+				"name": "John",
+				"age":  30,
+				"location": map[string]any{
+					"city": "New York",
+					"country": map[string]string{
+						"country": "USA",
+						"city":    "New York",
+					},
+				},
+			},
+		},
+		"nested with existing and map and array": {
+			m: map[string]any{
+				"name": "John",
+				"age":  30,
+				"location": map[string]any{
+					"city": "New York",
+				},
+			},
+			path: []string{"location", "country"},
+			value: map[string]any{
+				"country": "USA",
+				"city":    "New York",
+				"places":  []string{"USA", "UK"},
+			},
+			expected: map[string]any{
+				"name": "John",
+				"age":  30,
+				"location": map[string]any{
+					"city": "New York",
+					"country": map[string]any{
+						"country": "USA",
+						"city":    "New York",
+						"places":  []string{"USA", "UK"},
+					},
+				},
+			},
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			recurseMap(test.m, test.path, test.value)
+
+			delta := cmp.Diff(test.m, test.expected)
+			if delta != "" {
+				spew.Dump(test.m)
+				spew.Dump(test.expected)
+				t.Fatal(delta)
+			}
+
+			t.Logf("data: %s", test.m)
 		})
 	}
 }
