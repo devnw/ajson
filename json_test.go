@@ -92,6 +92,29 @@ func TestMarshalJSON(t *testing.T) {
 			},
 			expected: `{"name":"John","age":30,"sub":{"name":"Doe","location":"USA"},"location":"USA"}`,
 		},
+		"with unknown arrays": {
+			sample: Sample{
+				Name: "John",
+				Age:  30,
+			},
+			unknowns: MMap{
+				"location": []string{"USA", "UK"},
+			},
+			expected: `{"name":"John","age":30,"location":["USA","UK"]}`,
+		},
+		"with unknown maps": {
+			sample: Sample{
+				Name: "John",
+				Age:  30,
+			},
+			unknowns: MMap{
+				"location": map[string]string{
+					"country": "USA",
+					"city":    "New York",
+				},
+			},
+			expected: `{"name":"John","age":30,"location":{"city":"New York","country":"USA"}}`,
+		},
 	}
 
 	for name, test := range tests {
@@ -148,6 +171,24 @@ func TestUnmarshalJSON(t *testing.T) {
 			data:     `{"name":"John","age":30,"sub":{"name":"Doe","location":"USA"},"location":"USA"}`,
 			expected: Sample{Name: "John", Age: 30, Sub: &SubSample{Name: "Doe"}},
 			unknowns: MMap{"sub.location": "USA", "location": "USA"},
+		},
+		"with unknown arrays": {
+			data:     `{"name":"John","age":30,"sub":{"name":"Doe","location":"USA"},"location":"USA","emails":["test@example.com","test2@example.com"]}`,
+			expected: Sample{Name: "John", Age: 30, Sub: &SubSample{Name: "Doe"}},
+			unknowns: MMap{
+				"sub.location": "USA",
+				"location":     "USA",
+				"emails":       []string{"test@example.com", "test2@example.com"},
+			},
+		},
+		"with unknown maps": {
+			data:     `{"name":"John","age":30,"sub":{"name":"Doe","location":"USA"},"location":"USA","emails":{"test":"test@example.com"}}`,
+			expected: Sample{Name: "John", Age: 30, Sub: &SubSample{Name: "Doe"}},
+			unknowns: MMap{
+				"sub.location": "USA",
+				"location":     "USA",
+				"emails":       map[string]string{"test": "test@example.com"},
+			},
 		},
 	}
 
