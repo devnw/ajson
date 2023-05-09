@@ -29,10 +29,10 @@ go get -u go.devnw.com/ajson
 #### func  Marshal
 
 ```go
-func Marshal[T comparable](t T, mm MMap) ([]byte, error)
+func Marshal[T comparable](t T, mm map[string]any) ([]byte, error)
 ```
 MarshalJSON marshals the given struct to json and then merges the unknown fields
-into the json from the MMap object
+into the json from the map[string]any object
 
 Example usage:
 
@@ -52,7 +52,7 @@ Example usage:
     		Age:  30,
     	}
 
-    	unknowns := MMap{
+    	unknowns := map[string]any{
     		"location": "USA",
     	}
 
@@ -72,7 +72,7 @@ Example with embeded unknown and custom marshaler:
     type Sample struct {
     	Name 		string
     	Age  		int
-    	Unknowns	MMap
+    	Unknowns	map[string]any
     }
 
     func (s Sample) MarshalJSON() ([]byte, error) {
@@ -85,21 +85,13 @@ Example with embeded unknown and custom marshaler:
     	}, t.Unknowns)
     }
 
-#### type MMap
-
-```go
-type MMap map[string]any
-```
-
-MMap is a type alias for map[string]any.
-
 #### func  Unmarshal
 
 ```go
-func Unmarshal[T comparable](data []byte) (T, MMap, error)
+func Unmarshal[T comparable](data []byte) (T, map[string]any, error)
 ```
 UnmarshalJSON unmarshals the given json into the given struct and then returns
-the unknown fields as a MMap object.
+the unknown fields as a map[string]any object.
 
 Example usage:
 
@@ -135,7 +127,7 @@ Example with embeded unknown and custom unmarshaler:
     type Sample struct {
     	Name 		string
     	Age  		int
-    	Unknowns	MMap
+    	Unknowns	map[string]any
     }
 
     func (s *Sample) UnmarshalJSON(data []byte) error {
