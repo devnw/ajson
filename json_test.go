@@ -1,11 +1,11 @@
 package ajson
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/go-json-experiment/json"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -22,7 +22,7 @@ type SubSample struct {
 func TestMarshalJSON(t *testing.T) {
 	tests := map[string]struct {
 		sample   Sample
-		unknowns MMap
+		unknowns map[string]any
 		expected string
 	}{
 		"simple": {
@@ -47,7 +47,7 @@ func TestMarshalJSON(t *testing.T) {
 				Name: "John",
 				Age:  30,
 			},
-			unknowns: MMap{
+			unknowns: map[string]any{
 				"location": "USA",
 				"email":    "test@email.com",
 			},
@@ -61,7 +61,7 @@ func TestMarshalJSON(t *testing.T) {
 					Name: "Doe",
 				},
 			},
-			unknowns: MMap{
+			unknowns: map[string]any{
 				"location": "USA",
 			},
 			expected: `{"name":"John","age":30,"sub":{"name":"Doe"},"location":"USA"}`,
@@ -74,7 +74,7 @@ func TestMarshalJSON(t *testing.T) {
 					Name: "Doe",
 				},
 			},
-			unknowns: MMap{
+			unknowns: map[string]any{
 				"sub.location": "USA",
 			},
 			expected: `{"name":"John","age":30,"sub":{"name":"Doe","location":"USA"}}`,
@@ -87,7 +87,7 @@ func TestMarshalJSON(t *testing.T) {
 					Name: "Doe",
 				},
 			},
-			unknowns: MMap{
+			unknowns: map[string]any{
 				"sub.location": "USA",
 				"location":     "USA",
 			},
@@ -98,7 +98,7 @@ func TestMarshalJSON(t *testing.T) {
 				Name: "John",
 				Age:  30,
 			},
-			unknowns: MMap{
+			unknowns: map[string]any{
 				"location": []string{"USA", "UK"},
 			},
 			expected: `{"name":"John","age":30,"location":["USA","UK"]}`,
@@ -108,7 +108,7 @@ func TestMarshalJSON(t *testing.T) {
 				Name: "John",
 				Age:  30,
 			},
-			unknowns: MMap{
+			unknowns: map[string]any{
 				"location": map[string]string{
 					"country": "USA",
 					"city":    "New York",
@@ -116,7 +116,7 @@ func TestMarshalJSON(t *testing.T) {
 			},
 			expected: `{"name":"John","age":30,"location":{"city":"New York","country":"USA"}}`,
 		},
-		"nil MMap": {
+		"nil map[string]any": {
 			sample: Sample{
 				Name: "John",
 				Age:  30,
@@ -294,7 +294,7 @@ func TestUnmarshalJSON(t *testing.T) {
 	tests := map[string]struct {
 		data     string
 		expected Sample
-		unknowns MMap
+		unknowns map[string]any
 	}{
 		"simple": {
 			data:     `{"name":"John","age":30}`,
@@ -303,7 +303,7 @@ func TestUnmarshalJSON(t *testing.T) {
 		"simple with unknowns": {
 			data:     `{"name":"John","age":30,"location":"USA"}`,
 			expected: Sample{Name: "John", Age: 30},
-			unknowns: MMap{"location": "USA"},
+			unknowns: map[string]any{"location": "USA"},
 		},
 		"with sub": {
 			data:     `{"name":"John","age":30,"sub":{"name":"Doe"}}`,
@@ -312,22 +312,22 @@ func TestUnmarshalJSON(t *testing.T) {
 		"with sub and unknowns": {
 			data:     `{"name":"John","age":30,"sub":{"name":"Doe"},"location":"USA"}`,
 			expected: Sample{Name: "John", Age: 30, Sub: &SubSample{Name: "Doe"}},
-			unknowns: MMap{"location": "USA"},
+			unknowns: map[string]any{"location": "USA"},
 		},
 		"with sub-unknowns": {
 			data:     `{"name":"John","age":30,"sub":{"name":"Doe","location":"USA"}}`,
 			expected: Sample{Name: "John", Age: 30, Sub: &SubSample{Name: "Doe"}},
-			unknowns: MMap{"sub.location": "USA"},
+			unknowns: map[string]any{"sub.location": "USA"},
 		},
 		"with sub-unknowns and unknowns": {
 			data:     `{"name":"John","age":30,"sub":{"name":"Doe","location":"USA"},"location":"USA"}`,
 			expected: Sample{Name: "John", Age: 30, Sub: &SubSample{Name: "Doe"}},
-			unknowns: MMap{"sub.location": "USA", "location": "USA"},
+			unknowns: map[string]any{"sub.location": "USA", "location": "USA"},
 		},
 		"with unknown arrays": {
 			data:     `{"name":"John","age":30,"sub":{"name":"Doe","location":"USA"},"location":"USA","emails":["test@example.com","test2@example.com"]}`,
 			expected: Sample{Name: "John", Age: 30, Sub: &SubSample{Name: "Doe"}},
-			unknowns: MMap{
+			unknowns: map[string]any{
 				"sub.location": "USA",
 				"location":     "USA",
 				"emails":       []string{"test@example.com", "test2@example.com"},
@@ -336,7 +336,7 @@ func TestUnmarshalJSON(t *testing.T) {
 		"with unknown maps": {
 			data:     `{"name":"John","age":30,"sub":{"name":"Doe","location":"USA"},"location":"USA","emails":{"test":"test@example.com"}}`,
 			expected: Sample{Name: "John", Age: 30, Sub: &SubSample{Name: "Doe"}},
-			unknowns: MMap{
+			unknowns: map[string]any{
 				"sub.location": "USA",
 				"location":     "USA",
 				"emails":       map[string]string{"test": "test@example.com"},
@@ -361,6 +361,122 @@ func TestUnmarshalJSON(t *testing.T) {
 	}
 }
 
+type Sample2 struct {
+	Name string
+	Age  int
+	Sub  *SubSample `json:",omitempty"`
+}
+
+func Test_Unmarshal2(t *testing.T) {
+	tests := map[string]struct {
+		data     string
+		expected Sample2
+		unknowns map[string]any
+	}{
+		"simple": {
+			data:     `{"name":"John","age":30}`,
+			expected: Sample2{Name: "John", Age: 30},
+		},
+		"simple with unknowns": {
+			data:     `{"name":"John","age":30,"location":"USA"}`,
+			expected: Sample2{Name: "John", Age: 30},
+			unknowns: map[string]any{"location": "USA"},
+		},
+		"with sub": {
+			data:     `{"name":"John","age":30,"sub":{"name":"Doe"}}`,
+			expected: Sample2{Name: "John", Age: 30, Sub: &SubSample{Name: "Doe"}},
+		},
+		"with sub and unknowns": {
+			data:     `{"name":"John","age":30,"sub":{"name":"Doe"},"location":"USA"}`,
+			expected: Sample2{Name: "John", Age: 30, Sub: &SubSample{Name: "Doe"}},
+			unknowns: map[string]any{"location": "USA"},
+		},
+		"with sub-unknowns": {
+			data:     `{"name":"John","age":30,"sub":{"name":"Doe","location":"USA"}}`,
+			expected: Sample2{Name: "John", Age: 30, Sub: &SubSample{Name: "Doe"}},
+			unknowns: map[string]any{"sub.location": "USA"},
+		},
+		"with sub-unknowns and unknowns": {
+			data:     `{"name":"John","age":30,"sub":{"name":"Doe","location":"USA"},"location":"USA"}`,
+			expected: Sample2{Name: "John", Age: 30, Sub: &SubSample{Name: "Doe"}},
+			unknowns: map[string]any{"sub.location": "USA", "location": "USA"},
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			sample, unknowns, err := Unmarshal[Sample2]([]byte(test.data))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(sample, test.expected); diff != "" {
+				t.Fatal(diff)
+			}
+
+			t.Logf("sample: %+v", sample)
+			t.Logf("unknowns: %+v", unknowns)
+		})
+	}
+}
+
+func Test_Marshal2(t *testing.T) {
+	tests := map[string]struct {
+		data     Sample2
+		expected string
+		unknowns map[string]any
+	}{
+		"simple": {
+			data:     Sample2{Name: "John", Age: 30},
+			expected: `{"Name":"John","Age":30}`,
+		},
+		"simple with unknowns": {
+			data:     Sample2{Name: "John", Age: 30},
+			expected: `{"Name":"John","Age":30,"location":"USA"}`,
+			unknowns: map[string]any{"location": "USA"},
+		},
+		"with sub": {
+			data:     Sample2{Name: "John", Age: 30, Sub: &SubSample{Name: "Doe"}},
+			expected: `{"Name":"John","Age":30,"Sub":{"name":"Doe"}}`,
+		},
+		"with sub and unknowns": {
+			data:     Sample2{Name: "John", Age: 30, Sub: &SubSample{Name: "Doe"}},
+			expected: `{"Name":"John","Age":30,"Sub":{"name":"Doe"},"location":"USA"}`,
+			unknowns: map[string]any{"location": "USA"},
+		},
+		"with sub-unknowns": {
+			data:     Sample2{Name: "John", Age: 30, Sub: &SubSample{Name: "Doe"}},
+			expected: `{"Name":"John","Age":30,"Sub":{"name":"Doe","location":"USA"}}`,
+			unknowns: map[string]any{"Sub.location": "USA"},
+		},
+		"with sub-unknowns and unknowns": {
+			data:     Sample2{Name: "John", Age: 30, Sub: &SubSample{Name: "Doe"}},
+			expected: `{"Name":"John","Age":30,"Sub":{"name":"Doe","location":"USA"},"location":"USA"}`,
+			unknowns: map[string]any{"Sub.location": "USA", "location": "USA"},
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			data, err := Marshal[Sample2](test.data, test.unknowns)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			delta, err := diff(string(data), test.expected)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if delta != "" {
+				t.Fatal(delta)
+			}
+
+			t.Logf("data: %s", data)
+		})
+	}
+}
+
 func BenchmarkMarshalJSON(b *testing.B) {
 	sample := Sample{
 		Name: "John",
@@ -371,7 +487,7 @@ func BenchmarkMarshalJSON(b *testing.B) {
 	}
 
 	for i := 0; i < b.N; i++ {
-		_, err := Marshal(sample, MMap{
+		_, err := Marshal(sample, map[string]any{
 			"location": "USA",
 			"email":    "test@email.com",
 		})
@@ -399,7 +515,7 @@ func FuzzMarshalJSON(f *testing.F) {
 			Age:  age,
 		}
 
-		unknowns := MMap{
+		unknowns := map[string]any{
 			"location": stripCtlFromUTF8(location),
 			"email":    stripCtlFromUTF8(email),
 		}

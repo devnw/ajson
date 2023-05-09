@@ -1,19 +1,16 @@
 package ajson
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
 
-	"github.com/go-json-experiment/json"
 	"go.devnw.com/structs"
 )
 
-// MMap is a type alias for map[string]any.
-type MMap map[string]any
-
 // MarshalJSON marshals the given struct to json and then merges
-// the unknown fields into the json from the MMap object
+// the unknown fields into the json from the map[string]any object
 //
 // Example usage:
 //
@@ -33,7 +30,7 @@ type MMap map[string]any
 //			Age:  30,
 //		}
 //
-//		unknowns := MMap{
+//		unknowns := map[string]any{
 //			"location": "USA",
 //		}
 //
@@ -53,7 +50,7 @@ type MMap map[string]any
 //	type Sample struct {
 //		Name 		string
 //		Age  		int
-//		Unknowns	MMap
+//		Unknowns	map[string]any
 //	}
 //
 //	func (s Sample) MarshalJSON() ([]byte, error) {
@@ -65,7 +62,7 @@ type MMap map[string]any
 //			Name: t.Name,
 //		}, t.Unknowns)
 //	}
-func Marshal[T comparable](t T, mm MMap) ([]byte, error) {
+func Marshal[T comparable](t T, mm map[string]any) ([]byte, error) {
 	s := structs.New(t)
 	s.TagName = "json"
 
@@ -107,7 +104,7 @@ func recurseMap(m map[string]any, path []string, value any) {
 }
 
 // UnmarshalJSON unmarshals the given json into the given struct
-// and then returns the unknown fields as a MMap object.
+// and then returns the unknown fields as a map[string]any object.
 //
 // Example usage:
 //
@@ -143,7 +140,7 @@ func recurseMap(m map[string]any, path []string, value any) {
 //	type Sample struct {
 //		Name 		string
 //		Age  		int
-//		Unknowns	MMap
+//		Unknowns	map[string]any
 //	}
 //
 //	func (s *Sample) UnmarshalJSON(data []byte) error {
@@ -163,8 +160,8 @@ func recurseMap(m map[string]any, path []string, value any) {
 //
 //		return nil
 //	}
-func Unmarshal[T comparable](data []byte) (T, MMap, error) {
-	mm := MMap{}
+func Unmarshal[T comparable](data []byte) (T, map[string]any, error) {
+	mm := map[string]any{}
 
 	var t T
 	err := json.Unmarshal(data, &t)
