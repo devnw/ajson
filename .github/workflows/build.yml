@@ -1,12 +1,49 @@
-name: Lint, Build & Test
+name: Build
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
 
 env:
-  GH_ACCESS_TOKEN: ${{ secrets.GH_PAT }}
+  GOPRIVATE: go.spyder.org
 
 jobs:
-  lint-build-test:
-    name: Lint, Build & Test
-    uses: devnw/workflows/.github/workflows/build.yml@main
-    secrets: inherit # pragma: allowlist secret
+  build:
+    name: "Build"
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: de-vri-es/setup-git-credentials@v2
+        with:
+          credentials: ${{secrets.GIT_CREDENTIALS}}
+
+      - name: Install 1Password CLI
+        uses: 1password/install-cli-action@v1
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v18
+        with:
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+
+      - uses: workflow/nix-shell-action@v3
+        id: build 
+        with:
+          flakes-from-devshell: true
+          script: |
+            make build-ci
+
+      - name: Upload Test Coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage
+          path: coverage.txt
+
+      - name: Upload Fuzz Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: fuzz-results
+          path: testdata/fuzz
