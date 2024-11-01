@@ -1,6 +1,6 @@
-module go.devnw.com/ajson
+module go.spyder.org/ajson
 
-go 1.20
+go 1.23
 
 require (
 	github.com/davecgh/go-spew v1.1.1
