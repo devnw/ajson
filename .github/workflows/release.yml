@@ -42,7 +42,7 @@ jobs:
           curl -o- https://raw.githubusercontent.com/devnw/workflows/main/fuzz.sh | bash
           exit 0 # Fuzzing is not a test, so we don't want to fail the build
       - name: Upload Fuzz Results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: fuzz-results
           path: testdata/fuzz
